@@ -1,12 +1,31 @@
 const dotenv = require("dotenv").config();
 const express = require("express");
-const app = express();
-const Port = process.env.PORT || 8000;
-const { createServer } = require('node:http');
+const PORT = process.env.PORT || 8000;
+const { createServer } = require("node:http");
+const { Server } = require("socket.io");
 
+const app = express.json();
+const server = createServer(app);
 
-app.use(express.json());
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173"],
+  },
+});
 
-app.listen(Port, () => {
-  console.log("Server is running on: " + Port);
+let allTask = [];
+
+io.on("connection", (socket) => {
+  console.log("a user connected: " + socket.id);
+  socket.on("task", (value) => {
+    allTask.push(value);
+    socket.emit("taskClient", allTask);
+  });
+  socket.on("disconnect", () => {
+    console.log("user disconnected: " + socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log("Server is running on: " + PORT);
 });
